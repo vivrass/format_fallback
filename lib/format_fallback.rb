@@ -1,26 +1,25 @@
 require "format_fallback/version"
 
 module ActionView
-  class PathSet < Array
+  class PathSet
 
-    def find_with_default_template(path, prefix = nil, partial = false, details = {}, key = nil)
-      if prefix == "layouts"
+    def find_with_default_template(*args)
+      prefixes = args[1]
+      if prefixes.include?("layouts")
         # Layouts have their own way of managing fallback, better leave them alone
-        find_without_default_template(path, prefix, partial, details, key)
+        find_without_default_template(*args)
       else
-        begin
-          find_without_default_template(path, prefix, partial, details, key)
-        rescue MissingTemplate => e
-          raise e if details[:formats] == [:html]
-          html_details = details.dup.merge(:formats => [:html])
-          find_without_default_template(path, prefix, partial, html_details, key)
-        end
+        options = args[3]
+        options[:formats] << :html unless options[:formats].include?(:html)
+        find_without_default_template(*args)
       end
     end
     alias_method_chain :find, :default_template
 
   end
   
+=begin
+  # This doesn't seem to be useful. Keep it until we can test in production with caching
   class Resolver
     
     def cached(key, prefix, name, partial)
@@ -34,4 +33,5 @@ module ActionView
     end
     
   end
+=end
 end
